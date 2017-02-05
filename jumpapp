@@ -76,8 +76,14 @@ jumpapp() {
       printf 'Matched Windows [%d]\n' ${#windowids[@]}
       list_matching_windows "$classid" "${pids[@]}" | print_windows
     elif (( ${#windowids[@]} )) && ! needs_passthrough "$@"; then
-        activate_window "$(get_subsequent_window "${windowids[@]}")" ||
-            die "Error: unable to focus window for '$cmdid'"
+        local active_window=$(get_active_windowid)
+        local matched_window=${windowids[0]}
+        if [[ $active_window -eq $matched_window ]]; then
+            minimize_window $matched_window
+        else
+            activate_window "$(get_subsequent_window "${windowids[@]}")" ||
+                die "Error: unable to focus window for '$cmdid'"
+        fi
     else
         if (( ${#pids[@]} )) && [[ -z "$force" ]]; then
             die "Error: found running process for '$cmdid', but found no window to jump to"
@@ -350,6 +356,10 @@ get_active_workspace() {
 
 activate_window() {
     wmctrl -i -a "$1"
+}
+
+minimize_window() {
+    xdotool windowminimize "$1"
 }
 
 has_command() {
